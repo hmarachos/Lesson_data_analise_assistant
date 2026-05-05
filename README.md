@@ -28,10 +28,10 @@ OPENAI_MAX_HISTORY_MESSAGES=8
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 ```
 
-Откройте `http://localhost:8000`.
+Откройте `http://localhost:8001`.
 
 ## Docker
 

@@ -50,7 +50,7 @@ def get_settings() -> Settings:
     return Settings(
         app_name=os.getenv("APP_NAME", "Data Assistant"),
         app_host=os.getenv("APP_HOST", "0.0.0.0"),
-        app_port=int(os.getenv("APP_PORT", "8000")),
+        app_port=int(os.getenv("APP_PORT", "8001")),
         max_file_size=os.getenv("MAX_FILE_SIZE", "10MB"),
         max_file_size_bytes=parse_size_to_bytes(os.getenv("MAX_FILE_SIZE", "10MB")),
         upload_dir=upload_dir,
