@@ -60,7 +60,7 @@ async def chart_action(
         stored_file = file_service.get_file(file_id)
         chart_service.generate_chart(stored_file, chart_type, x_column=x_column or None, y_column=y_column or None)
         context = _panel_context(request, file_id, success_message="График построен и сохранен.")
-    except FileReadError as exc:
+    except (FileReadError, KeyError, ValueError) as exc:
         context = _panel_context(request, file_id, error_message=str(exc))
     return templates.TemplateResponse("partials/result_panel.html", context)
 

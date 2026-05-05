@@ -266,7 +266,7 @@ class ChatService:
                         charts=charts[:3],
                     )
                     assistant_message["attachments"].append(self._artifact_chip(export_record, "export"))
-            except FileServiceError as exc:
+            except (FileServiceError, KeyError, ValueError) as exc:
                 notes.append(f"Не удалось выполнить действие `{action_type}`: {exc}")
 
         if notes:

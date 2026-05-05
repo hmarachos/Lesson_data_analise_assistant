@@ -6,7 +6,11 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - optional outside packaged runtime
+    def load_dotenv(*_: object, **__: object) -> bool:
+        return False
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]

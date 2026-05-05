@@ -146,6 +146,20 @@
             {% endfor %}
         </div>
 
+        <div id="ai-processing" class="ai-processing" hidden aria-live="polite" aria-busy="true">
+            <div class="ai-processing__spinner" aria-hidden="true"></div>
+            <div>
+                <strong>Нейросеть обрабатывает запрос</strong>
+                <span>Анализируем контекст, файл и формируем ответ…</span>
+                <div class="ai-processing__pulse" aria-hidden="true">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+            </div>
+        </div>
+
         <form
             class="composer"
             hx-post="/chat/{{ conversation.conversation_id }}/message"
