@@ -64,13 +64,9 @@ class ChartService:
         columns = self.file_service.describe_columns(dataframe)
         numeric_columns = [item["name"] for item in columns if item["kind"] == "numeric"]
         dimension_columns = [item["name"] for item in columns if item["kind"] in {"categorical", "datetime"}]
-        all_columns = [str(column) for column in dataframe.columns]
 
-        if not all_columns:
-            raise FileReadError("В таблице нет колонок для построения графика.")
-
-        selected_x = self._resolve_column(x_column, dimension_columns or all_columns, all_columns)
-        selected_y = self._resolve_column(y_column, numeric_columns or all_columns, all_columns)
+        selected_x = x_column or (dimension_columns or list(dataframe.columns))[0]
+        selected_y = y_column or (numeric_columns or list(dataframe.columns))[0]
         file_name = self._build_output_name(stored_file.file_id, chart_type, "png")
         output_path = self.settings.output_dir / file_name
 
@@ -81,9 +77,7 @@ class ChartService:
         if chart_type == "histogram":
             if not numeric_columns:
                 raise FileReadError("Для histogram нужен хотя бы один числовой столбец.")
-            selected_x = self._resolve_column(x_column, numeric_columns, all_columns)
-            if selected_x not in numeric_columns:
-                selected_x = numeric_columns[0]
+            selected_x = x_column or numeric_columns[0]
             series = pd.to_numeric(dataframe[selected_x], errors="coerce").dropna()
             if series.empty:
                 raise FileReadError("Недостаточно числовых значений для histogram.")
@@ -96,10 +90,6 @@ class ChartService:
         elif chart_type == "line":
             if not numeric_columns:
                 raise FileReadError("Для line нужен хотя бы один числовой столбец.")
-            selected_x = self._resolve_column(x_column, dimension_columns or all_columns, all_columns)
-            selected_y = self._resolve_column(y_column, numeric_columns, all_columns)
-            if selected_y not in numeric_columns:
-                selected_y = numeric_columns[0]
             plot_frame = dataframe[[selected_x, selected_y]].copy()
             plot_frame[selected_y] = pd.to_numeric(plot_frame[selected_y], errors="coerce")
             plot_frame = plot_frame.dropna(subset=[selected_y]).head(50)
@@ -119,10 +109,8 @@ class ChartService:
             description = f"Линейная динамика «{selected_y}» по оси «{selected_x}»."
         else:
             if numeric_columns:
-                group_x = self._resolve_column(x_column, dimension_columns or all_columns, all_columns)
-                group_y = self._resolve_column(y_column, numeric_columns, all_columns)
-                if group_y not in numeric_columns:
-                    group_y = numeric_columns[0]
+                group_x = x_column or (dimension_columns or list(dataframe.columns))[0]
+                group_y = y_column or numeric_columns[0]
                 grouped = (
                     dataframe[[group_x, group_y]]
                     .copy()
@@ -139,7 +127,6 @@ class ChartService:
                 axis.set_title(f"Bar chart: {group_x}")
                 description = f"Средние значения «{group_y}» по категориям «{group_x}»."
             else:
-                selected_x = self._resolve_column(x_column, dimension_columns or all_columns, all_columns)
                 counts = dataframe[selected_x].astype(str).value_counts().head(12)
                 axis.bar(counts.index, counts.values, color="#6c8b6b")
                 axis.set_ylabel("Count")
@@ -158,37 +145,6 @@ class ChartService:
             "storage_url": f"/storage/outputs/{file_name}",
             "download_url": f"/download/{file_name}",
         }
-
-    def _resolve_column(
-        self,
-        requested: str | None,
-        preferred_columns: list[str],
-        all_columns: list[str],
-    ) -> str:
-        fallback_columns = preferred_columns or all_columns
-        if not fallback_columns:
-            raise FileReadError("В таблице нет подходящих колонок для графика.")
-
-        if not requested:
-            return fallback_columns[0]
-
-        requested_clean = str(requested).strip()
-        if not requested_clean:
-            return fallback_columns[0]
-
-        exact_lookup = {column: column for column in all_columns}
-        if requested_clean in exact_lookup:
-            return exact_lookup[requested_clean]
-
-        normalized_requested = self._normalize_column_name(requested_clean)
-        normalized_lookup = {
-            self._normalize_column_name(column): column
-            for column in all_columns
-        }
-        return normalized_lookup.get(normalized_requested, fallback_columns[0])
-
-    def _normalize_column_name(self, value: str) -> str:
-        return "".join(character for character in value.lower() if character.isalnum())
 
     def _generate_image_chart(self, stored_file: StoredFile, chart_type: str) -> dict[str, Any]:
         image = self.file_service.open_image(stored_file)
